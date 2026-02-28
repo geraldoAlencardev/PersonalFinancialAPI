@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: PersonalFinancerControlAPI
+  datasource:
+    url: jdbc:postgresql://localhost:5432/financial_db
+    username: postgres
+    password: geraldodetona
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  docker:
+    compose:
+      enabled: true
+      lifecycle-management: start_and_stop
+
+server:
+  port: 8080
