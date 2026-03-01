@@ -1,5 +1,6 @@
 package com.Alencar.demo.service;
 
+import com.Alencar.demo.infrastructure.exceptions.BusinessException;
 import com.Alencar.demo.infrastructure.exceptions.ResourceNotFoundException;
 import com.Alencar.demo.model.Account;
 import com.Alencar.demo.model.User;
@@ -24,10 +25,12 @@ public class AccountService {
     }
 
     @Transactional
-    public Account createAccount(Account account) {
+    public Account createAccount(Account account, Long userId) {
         if(account.getBalance() == null){
             account.setBalance(BigDecimal.ZERO);
         }
+
+        account.setUser(User.builder().id(userId).build());
         return accountRepository.save(account);
     }
 
@@ -46,5 +49,16 @@ public class AccountService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    @Transactional
+    public void deleteAccount(Long userId, Long accountId) {
+        Account account = accountRepository.findByIdAndUser(accountId, User.builder().id(userId).build())
+                .orElseThrow(() -> new ResourceNotFoundException("Conta não encontrada ou não pertence ao usuário"));
 
+        if(account.getTransactions() != null && !account.getTransactions().isEmpty()){
+            throw new BusinessException("Não é possível excluir uma conta que possui transações vinculadas. " +
+                    "Dica: Exclua as transações primeiro ou apenas arquive a conta.");
+        }
+
+        accountRepository.delete(account);
+    }
 }

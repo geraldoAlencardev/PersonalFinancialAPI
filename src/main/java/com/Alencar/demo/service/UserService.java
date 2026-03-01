@@ -9,7 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,10 +17,11 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /*
     @Transactional(readOnly = true)
     public List<User> findAll() {
         return userRepository.findAll();
-    }
+    } */
 
     @Transactional(readOnly = true)
     public User findById(Long id) {
@@ -81,7 +81,7 @@ public class UserService {
         User user = findById(id);
 
         if(!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new BusinessException("A senha atual esttá incorreta");
+            throw new BusinessException("A senha atual está incorreta");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));

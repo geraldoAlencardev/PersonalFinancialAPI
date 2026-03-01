@@ -2,6 +2,7 @@ package com.Alencar.demo.service;
 
 import com.Alencar.demo.infrastructure.exceptions.*;
 import com.Alencar.demo.model.Category;
+import com.Alencar.demo.model.User;
 import com.Alencar.demo.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,16 +21,20 @@ public class CategoryService {
         return categoryRepository.findAllGlobalAndByUser(userId);
     }
 
+    // sem utilização até o momento
     @Transactional(readOnly = true)
-    public Category findById(Long id) {
-        return categoryRepository.findById(id)
+    public Category findById(Long id, Long userId) {
+        Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
+        if(category.getUser() != null && !category.getUser().getId().equals(userId)){
+            throw new ResourceNotFoundException("Categoria não encontrada ou não pertece ao usuario");
+        }
+        return category;
     }
 
     @Transactional
-    public Category createCategory(Category category) {
-
-        Long userId = (category.getUser() != null) ? category.getUser().getId() : null;
+    public Category createCategory(Category category, Long userId) {
+        category.setUser(User.builder().id(userId).build());
 
         boolean categoryExists = categoryRepository.existsByNameAndUserOrGlobal(category.getName(), userId);
         if (categoryExists) {
@@ -41,14 +46,14 @@ public class CategoryService {
     @Transactional
     public void deleteCategory(Long id, Long userId) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Categoria não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada."));
 
         if(category.getUser() == null){
             throw new BusinessException("Categoria do sistema não podem ser removidas");
         }
 
-        if (!category.getUser().getId().equals(userId)) {
-            throw new BusinessException("Você não tem permissão para remover esta categoria");
+        if(!category.getUser().getId().equals(userId)){
+            throw new ResourceNotFoundException("Categoria não encontrada ou não pertence ao usuário.");
         }
 
         if(category.getTransactions() != null && !category.getTransactions().isEmpty()){
