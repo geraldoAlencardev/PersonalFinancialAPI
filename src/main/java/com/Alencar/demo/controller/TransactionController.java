@@ -4,6 +4,7 @@ import com.Alencar.demo.dto.transaction.TransactionCreateDTO;
 import com.Alencar.demo.dto.transaction.TransactionResponseDTO;
 import com.Alencar.demo.mapper.TransactionMapper;
 import com.Alencar.demo.model.Transaction;
+import com.Alencar.demo.model.User;
 import com.Alencar.demo.model.enums.TransactionType;
 import com.Alencar.demo.service.TransactionService;
 import jakarta.validation.Valid;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -26,10 +28,10 @@ public class TransactionController {
 
 
     @PostMapping
-    public ResponseEntity<TransactionResponseDTO> createTransaction(@RequestHeader("X-User-Id") Long userId,
+    public ResponseEntity<TransactionResponseDTO> createTransaction(@AuthenticationPrincipal User loggedUser,
                                                                     @Valid @RequestBody TransactionCreateDTO dto){
         Transaction transaction = transactionMapper.toEntity(dto);
-        Transaction savedTransaction = transactionService.createTransaction(transaction, userId);
+        Transaction savedTransaction = transactionService.createTransaction(transaction, loggedUser.getId());
         TransactionResponseDTO response = transactionMapper.TransactionResponseDTO(savedTransaction);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -37,13 +39,13 @@ public class TransactionController {
 
     @GetMapping
     public ResponseEntity<List<TransactionResponseDTO>> findAll(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User loggedUser,
             @RequestParam(required = false)TransactionType type,
             @RequestParam(required = false)Long accountId,
             @RequestParam(required = false)@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate startDate,
             @RequestParam(required = false)@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate endDate
             ){
-        List<Transaction> transactions = transactionService.findByFilters(userId, type, accountId, startDate, endDate);
+        List<Transaction> transactions = transactionService.findByFilters(loggedUser.getId(), type, accountId, startDate, endDate);
 
         List<TransactionResponseDTO> response = transactions.stream().map(transactionMapper::TransactionResponseDTO).toList();
 
@@ -52,19 +54,19 @@ public class TransactionController {
 
     @GetMapping("/account/{accountId}")
     public ResponseEntity<List<TransactionResponseDTO>> findByAccountAndUser(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User loggedUser,
             @PathVariable Long accountId
     ){
-        List<Transaction> transactions = transactionService.findByAccountIdAndUser(userId, accountId);
+        List<Transaction> transactions = transactionService.findByAccountIdAndUser(loggedUser.getId(), accountId);
         List<TransactionResponseDTO> response = transactions.stream().map(transactionMapper::TransactionResponseDTO).toList();
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTransaction(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User loggedUser,
             @PathVariable Long id){
-        transactionService.deleteTransaction(id, userId);
+        transactionService.deleteTransaction(id, loggedUser.getId());
         return ResponseEntity.noContent().build();
     }
 }

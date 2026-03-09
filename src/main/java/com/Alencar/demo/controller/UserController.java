@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,29 +31,30 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> findById(@PathVariable Long id){
-        User user = userService.findById(id);
-        UserResponseDTO response = userMapper.userResponseDTO(user);
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> findMe(@AuthenticationPrincipal User loggedUser){
+        UserResponseDTO response = userMapper.userResponseDTO(loggedUser);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> update(@PathVariable Long id, @Valid @RequestBody UserCreateDTO dto){
+    @PutMapping("/me")
+    public ResponseEntity<UserResponseDTO> update(@AuthenticationPrincipal User loggedUser,
+                                                  @Valid @RequestBody UserCreateDTO dto){
 
         User userDetails = userMapper.toEntity(dto);
-        User userUpdated = userService.updateUser(id, userDetails);
+        User userUpdated = userService.updateUser(loggedUser.getId(), userDetails);
         UserResponseDTO response = userMapper.userResponseDTO(userUpdated);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @PatchMapping("/{id}/password")
-    public ResponseEntity<Void> updatePassword(@PathVariable Long id, @Valid @RequestBody UserPasswordUpdateDTO dto){
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> updatePassword(@AuthenticationPrincipal User loggedUser,
+                                               @Valid @RequestBody UserPasswordUpdateDTO dto){
 
         userService.updatePassword(
-                id,
+                loggedUser.getId(),
                 dto.currentPassword(),
                 dto.newPassword(),
                 dto.confirmPassword()
@@ -61,9 +63,9 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id){
-        userService.deleteUser(id);
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal User loggedUser){
+        userService.deleteUser(loggedUser.getId());
         return ResponseEntity.noContent().build();
     }
 }

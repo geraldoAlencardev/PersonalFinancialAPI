@@ -72,6 +72,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public void updatePassword(Long id, String oldPassword, String newPassword, String confirmPassword) {
 
         if(!newPassword.equals(confirmPassword)) {
@@ -88,6 +89,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void deleteUser(Long id) {
         User user = findById(id);
         userRepository.delete(user);

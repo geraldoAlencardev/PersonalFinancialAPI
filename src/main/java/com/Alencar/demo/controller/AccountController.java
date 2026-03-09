@@ -5,11 +5,13 @@ import com.Alencar.demo.dto.account.AccountResponseDTO;
 import com.Alencar.demo.dto.account.TotalBalanceResponseDTO;
 import com.Alencar.demo.mapper.AccountMapper;
 import com.Alencar.demo.model.Account;
+import com.Alencar.demo.model.User;
 import com.Alencar.demo.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -25,39 +27,39 @@ public class AccountController {
 
     @GetMapping
     public ResponseEntity<List<AccountResponseDTO>> findAllByUser(
-            @RequestHeader("X-User-Id") Long userId
+            @AuthenticationPrincipal User loggedUser
     ){
-        List<Account> accounts = accountService.findAllByUser(userId);
+        List<Account> accounts = accountService.findAllByUser(loggedUser.getId());
         List<AccountResponseDTO> response = accounts.stream().map(accountMapper::accountResponseDTO).toList();
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountResponseDTO> findById(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User loggedUser,
             @PathVariable Long accountId){
 
-        Account account = accountService.findByIdAndUser(userId, accountId);
+        Account account = accountService.findByIdAndUser(loggedUser.getId(), accountId);
         AccountResponseDTO response = accountMapper.accountResponseDTO(account);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/totalBalance")
     public ResponseEntity<TotalBalanceResponseDTO> getTotalBalance(
-            @RequestHeader("X-User-Id") Long userId
+            @AuthenticationPrincipal User loggedUser
     ){
-        BigDecimal totalBalance = accountService.getTotalBalance(userId);
+        BigDecimal totalBalance = accountService.getTotalBalance(loggedUser.getId());
         TotalBalanceResponseDTO response = new TotalBalanceResponseDTO(totalBalance);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping
     public ResponseEntity<AccountResponseDTO> createAccount(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User loggedUser,
             @Valid @RequestBody AccountCreateDTO dto
             ){
         Account account = accountMapper.toEntity(dto);
-        Account savedAccount = accountService.createAccount(account, userId);
+        Account savedAccount = accountService.createAccount(account, loggedUser.getId());
         AccountResponseDTO response = accountMapper.accountResponseDTO(savedAccount);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -65,10 +67,10 @@ public class AccountController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAccount(
-            @RequestHeader("X-User-Id") Long userId,
+            @AuthenticationPrincipal User loggedUser,
             @PathVariable Long id
     ){
-        accountService.deleteAccount(userId, id);
+        accountService.deleteAccount(loggedUser.getId(), id);
         return ResponseEntity.noContent().build();
     }
 }
